@@ -116,14 +116,14 @@
             <div class="col-lg-8">
                 <div class="glass-card map-container p-2">
                     {% if item and item.map_image %}
-                        <img src="{{ url_for('static', filename=item.map_image) }}" 
-                             class="w-full h-full rounded-3 object-cover" 
-                             alt="Map of {{ item_name }}">
-                    {% else %}
-                        <div class="bg-slate-200 w-full h-full rounded-3 flex items-center justify-center italic text-muted">
-                            Map imagery updating soon for {{ item_name }}
-                        </div>
-                    {% endif %}
+                <img src="{{ url_for('static', filename=item.map_image) }}" 
+                class="w-full h-full rounded-3 object-cover" 
+                alt="Map of {{ item_name }}">
+        {% else %}
+            <div class="bg-slate-200 w-full h-full rounded-3 flex items-center justify-center italic text-muted">
+                Map imagery updating soon for {{ item_name }}
+            </div>
+        {% endif %}
                 </div>
             </div>
 
