@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ sector_name if sector_name else "Explore" }}, Gurgaon | Kshetrapal Developers</title>
+    <title>{{ item_name if item_name else "Explore" }} | Kshetrapal Developers</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,7 +12,7 @@
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-image: url("../static/Background.png"); 
+            background-image: url("{{ url_for('static', filename='Background.png') }}"); 
             background-repeat: no-repeat;
             background-size: cover;
             background-position: top center;
@@ -36,7 +36,6 @@
             border-radius: 12px;
             font-weight: 600;
         }
-
         .btn-orange:hover { background-color: #c2410c; color: white; }
 
         .nav-glass {
@@ -50,34 +49,28 @@
             width: 100%;
             z-index: 1000;
         }
-
-        .nav-glass.scrolled {
-            transform: translateY(0); 
-            box-shadow: 0 4px 30px rgba(0,0,0,0.05);
-        }
+        .nav-glass.scrolled { transform: translateY(0); box-shadow: 0 4px 30px rgba(0,0,0,0.05); }
 
         .map-container { height: 500px; overflow: hidden; }
-        .chat-container { height: 500px; display: flex; flex-direction: column; }
-        .chat-messages { flex-grow: 1; overflow-y: auto; padding: 15px; }
+        .forum-feed { height: 350px; overflow-y: auto; }
 
         .sub-area-pill {
             transition: all 0.2s ease;
             cursor: pointer;
             border: 1px solid rgba(0,0,0,0.1);
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.8);
             padding: 0.75rem 1.5rem;
             border-radius: 50px;
             font-size: 0.875rem;
             display: inline-block;
             text-decoration: none;
-            color: #1e293b;
+            color: #1e293b !important;
         }
         .sub-area-pill:hover {
             background: #ea580c;
             color: white !important;
+            transform: translateY(-2px);
         }
-
-        .news-card-img { height: 160px; object-fit: cover; border-radius: 18px 18px 0 0; }
     </style>
 </head>
 <body class="pb-5">
@@ -85,224 +78,186 @@
     <nav id="floatingNav" class="nav-glass py-2">
         <div class="container d-flex align-items-center justify-content-between">
             <a class="navbar-brand d-flex align-items-center" href="/">
-                <img src="../static/logo_kshetrapal.png" alt="Logo" style="max-height: 40px;" class="me-2">
+                <img src="{{ url_for('static', filename='logo_kshetrapal.png') }}" alt="Logo" style="max-height: 40px;" class="me-2">
                 <span class="fw-bold text-orange-700 h5 mb-0 d-none d-md-block">Kshetrapal</span>
             </a>
-            
             <form action="/search" method="GET" class="flex-grow-1 mx-3 mx-lg-5">
                 <div class="glass-card px-3 py-1 d-flex align-items-center" style="border-radius: 50px; background: rgba(255,255,255,0.6);">
                     <span class="me-2">📍</span>
-                    <input type="text" name="q" class="form-control border-0 bg-transparent shadow-none p-0 sm:text-sm" placeholder="Search Sector..." value="{{ sector_name }}">
+                    <input type="text" name="q" class="form-control border-0 bg-transparent shadow-none p-0 sm:text-sm" placeholder="Search another area..." value="{{ item_name }}">
                 </div>
             </form>
         </div>
     </nav>
 
     <div class="container pt-4 mb-4">
-        <div class="d-flex align-items-center" id="staticHeader">
-            <img src="../static/logo_kshetrapal.png" alt="Logo" style="max-width: 150px; height: auto;">
-            <div class="ms-3">
-                <span class="fw-bold text-orange-700 d-block h4 mb-0">Kshetrapal</span>
-                <small class="text-muted fw-semibold text-uppercase tracking-widest" style="font-size: 10px;">Developers</small>
-            </div>
+        <div class="d-flex align-items-center">
+            <a href="/" class="d-flex align-items-center text-decoration-none">
+                <img src="{{ url_for('static', filename='logo_kshetrapal.png') }}" alt="Logo" style="max-width: 120px; height: auto;">
+                <div class="ms-3">
+                    <span class="fw-bold text-orange-700 d-block h4 mb-0">Kshetrapal</span>
+                    <small class="text-muted fw-semibold text-uppercase tracking-widest" style="font-size: 10px;">Developers</small>
+                </div>
+            </a>
         </div>
     </div>
 
     <div class="container">
         <div class="mb-4">
             <h1 class="display-6 fw-extrabold text-slate-900">
-                Verified Results for <span class="text-orange-600">{{ item_name if item_name else "Area not found" }}.</span>
+                Verified Results for <span class="text-orange-600">{{ item_name if item_name else "Location" }}</span>
             </h1>
-            <p class="text-slate-600">Delhi, NCR • Premium Residential Hub</p>
+            <p class="text-slate-600">
+                {% if level|lower == "area" %} Regional Hub {% else %} Premium Residential Hub {% endif %} • Delhi NCR
+            </p>
         </div>
 
         <div class="row g-4 mb-5">
             <div class="col-lg-8">
-           <div class="glass-card map-container p-2">
-    {% if item and item.map_image %}
-        <img src="{{ url_for('static', filename=item.map_image) }}" 
-             class="w-full h-full rounded-3 object-cover" 
-             alt="Map of {{ item_name }}">
-    {% else %}
-        <div class="bg-slate-200 w-full h-full rounded-3 flex items-center justify-center italic text-muted">
-            Map coming soon for {{ item_name }}
-        </div>
-    {% endif %}
-</div>
+                <div class="glass-card map-container p-2">
+                    {% if item and item.map_image %}
+                        <img src="{{ url_for('static', filename=item.map_image) }}" 
+                             class="w-full h-full rounded-3 object-cover" 
+                             alt="Map of {{ item_name }}">
+                    {% else %}
+                        <div class="bg-slate-200 w-full h-full rounded-3 flex items-center justify-center italic text-muted">
+                            Map imagery updating soon for {{ item_name }}
+                        </div>
+                    {% endif %}
+                </div>
             </div>
 
             <div class="col-lg-4">
-                <div class="glass-card flex flex-col h-[600px]" id="forumContainer" 
-     data-target-id="{{ item.id }}" data-level="{{ level|lower }}">
-    
-    <div class="p-4 border-bottom bg-slate-50 rounded-t-[24px]">
-        <h5 class="fw-bold mb-0 text-slate-800">Community Forum</h5>
-        <p class="small text-muted mb-0">Official board for {{ item_name }}</p>
-    </div>
+                <div class="glass-card flex flex-col h-[500px]" id="forumContainer" 
+                     data-target-id="{{ item.id }}" data-level="{{ level|lower }}">
+                    
+                    <div class="p-4 border-bottom bg-slate-50 rounded-t-[24px]">
+                        <h5 class="fw-bold mb-0 text-slate-800">Community Board</h5>
+                        <p class="small text-muted mb-0">Updates for {{ item_name }}</p>
+                    </div>
 
-    <div class="p-4 overflow-y-auto flex-grow-1 bg-white/30" id="forumFeed">
-        </div>
+                    <div class="p-4 overflow-y-auto flex-grow-1 bg-white/30 forum-feed" id="forumFeed">
+                        </div>
 
-    <div class="p-4 border-top bg-slate-50 rounded-b-[24px]">
-        <div class="row g-2 mb-3">
-            <div class="col-md-6">
-                <input type="text" id="forumName" class="form-control shadow-sm" placeholder="Full Name">
-            </div>
-            <div class="col-md-6">
-                <input type="tel" id="forumPhone" class="form-control shadow-sm" placeholder="Phone Number">
-            </div>
-        </div>
-        <textarea id="forumContent" class="form-control shadow-sm mb-3" rows="2" placeholder="Share an update or ask a question..."></textarea>
-        <button class="btn btn-orange w-100 fw-bold" onclick="submitToForum()">Post to Board</button>
-    </div>
-</div>
+                    <div class="p-4 border-top bg-slate-50 rounded-b-[24px]">
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <input type="text" id="forumName" class="form-control form-control-sm shadow-none" placeholder="Name">
+                            </div>
+                            <div class="col-6">
+                                <input type="tel" id="forumPhone" class="form-control form-control-sm shadow-none" placeholder="Phone">
+                            </div>
+                        </div>
+                        <textarea id="forumContent" class="form-control form-control-sm shadow-none mb-2" rows="2" placeholder="Ask a question..."></textarea>
+                        <button class="btn btn-orange w-100 btn-sm fw-bold" onclick="submitToForum()">Post Message</button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="mb-5">
-    <h4 class="fw-bold mb-3">
-        {% if level == "Area" %} Explorable Sectors {% else %} Sub-Colonies & Societies {% endif %}
-    </h4>
-    
-    <div class="d-flex flex-wrap gap-2">
-        {% if level == "Area" %}
-            {% for sector in sectors %}
-                <a href="/search?q={{ sector.name }}" class="sub-area-pill shadow-sm">
-                    {{ sector.name }} <span class="opacity-50 text-xs ms-1">➔</span>
-                </a>
-            {% endfor %}
-
-        {% elif level == "Sector" %}
-            {% if societies %}
-                {% for society in societies %}
-                    <a href="/society/{{ society.id }}" class="sub-area-pill shadow-sm">
-                        {{ society.name }} <span class="opacity-50 text-xs ms-1">({{ society.type }})</span>
-                    </a>
-                {% endfor %}
-            {% else %}
-                <p class="text-muted italic">No societies registered in this sector yet.</p>
-            {% endif %}
-
-        {% else %}
-            <div class="p-3 glass-card bg-orange-50 border-orange-200">
-                <p class="mb-0 text-orange-800">You are viewing details for <strong>{{ item_name }}</strong>.</p>
-            </div>
-        {% endif %}
-    </div>
-</div>
-
-        <div class="mb-5 mt-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold mb-0">Latest Local News</h4>
-                <a href="#" class="text-orange-600 fw-bold text-decoration-none small">View All News</a>
-            </div>
+            <h4 class="fw-bold mb-4 text-slate-800">
+                {% if level|lower == "area" %} 
+                    Explore Sectors in {{ item_name }}
+                {% elif level|lower == "sector" %} 
+                    Societies & Sub-Colonies
+                {% else %} 
+                    Location Details
+                {% endif %}
+            </h4>
             
-            <div class="row g-4">
-                {% if news_list %}
-                    {% for news in news_list %}
-                    <div class="col-md-4">
-                        <div class="glass-card p-0 h-100 d-flex flex-column overflow-hidden">
-                            <div class="bg-slate-300 news-card-img flex items-center justify-center italic text-slate-500 text-center px-3">
-                                {{ news.category }}
-                            </div>
-                            <div class="p-4 flex-grow-1">
-                                <span class="badge bg-orange-100 text-orange-700 mb-2">{{ news.category }}</span>
-                                <h6 class="fw-bold text-slate-900">{{ news.title }}</h6>
-                                <p class="small text-slate-600 mb-3">{{ news.content[:120] }}...</p>
-                            </div>
-                            <div class="p-3 border-top bg-white/30">
-                                <a href="#" class="text-orange-600 fw-bold text-decoration-none small">Read Full Story →</a>
-                            </div>
-                        </div>
-                    </div>
+            <div class="d-flex flex-wrap gap-3">
+                {% if level|lower == "area" %}
+                    {% for s in sectors %}
+                        <a href="/search?q={{ s.name }}" class="sub-area-pill shadow-sm">
+                            {{ s.name }} <span class="ms-1 text-orange-500">➔</span>
+                        </a>
+                    {% else %}
+                        <p class="text-muted italic">No sectors listed for this area.</p>
                     {% endfor %}
+
+                {% elif level|lower == "sector" %}
+                    {% if societies %}
+                        {% for soc in societies %}
+                            <a href="/search?q={{ soc.name }}" class="sub-area-pill shadow-sm">
+                                <span class="fw-semibold">{{ soc.name }}</span>
+                                {% if soc.type %}
+                                    <span class="text-[10px] text-slate-500 ms-1">({{ soc.type }})</span>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted italic">No registered societies found in this sector.</p>
+                    {% endif %}
+
                 {% else %}
-                    <div class="col-12">
-                        <p class="text-muted">No recent news updates for this sector.</p>
+                    <div class="p-4 glass-card bg-orange-50 border-orange-200 w-full">
+                        <p class="mb-1 text-orange-800">You are viewing <strong>{{ item_name }}</strong>.</p>
+                        <p class="small text-orange-700 mb-0">Part of {{ item.sector_ref.name if item.sector_ref else "Premium Sector" }}</p>
                     </div>
                 {% endif %}
             </div>
         </div>
-
     </div> 
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // 1. Floating Navbar Logic
+        // Floating Navbar Toggle
         const floatingNav = document.getElementById('floatingNav');
         window.addEventListener('scroll', () => {
-            if (window.scrollY > 100) {
-                floatingNav.classList.add('scrolled');
-            } else {
-                floatingNav.classList.remove('scrolled');
-            }
+            window.scrollY > 150 ? floatingNav.classList.add('scrolled') : floatingNav.classList.remove('scrolled');
         });
 
-        // 2. Forum Loading Logic
+        // Forum Data Fetch
         async function loadForum() {
             const container = document.getElementById('forumContainer');
-            if (!container) return; // Exit if forum doesn't exist on this page
+            if (!container || !container.dataset.targetId) return;
 
-            const targetId = container.dataset.targetId;
-            const levelType = container.dataset.level;
+            const tId = container.dataset.targetId;
+            const lType = container.dataset.level;
             const feed = document.getElementById('forumFeed');
 
             try {
-                const response = await fetch(`/get_forum_posts?target_id=${targetId}&level_type=${levelType}`);
+                const response = await fetch(`/get_forum_posts?target_id=${tId}&level_type=${lType}`);
                 const posts = await response.json();
-
-                feed.innerHTML = posts.map(post => `
-                    <div class="mb-4 p-3 bg-white rounded-4 border shadow-sm">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold text-orange-700">${post.user}</span>
-                            <span class="text-muted" style="font-size: 11px;">${post.date} • ${post.time}</span>
+                feed.innerHTML = posts.map(p => `
+                    <div class="mb-3 p-3 bg-white rounded-4 border-0 shadow-sm">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-bold text-orange-600 small">${p.user}</span>
+                            <span class="text-muted" style="font-size: 10px;">${p.date}</span>
                         </div>
-                        <p class="text-slate-700 mb-0" style="font-size: 14px; line-height: 1.6;">${post.content}</p>
+                        <p class="text-slate-700 mb-0 small" style="line-height: 1.5;">${p.content}</p>
                     </div>
                 `).join('');
-                
                 feed.scrollTop = feed.scrollHeight;
-            } catch (error) {
-                console.error("Forum failed to load:", error);
-            }
+            } catch (e) { console.error("Forum Error", e); }
         }
 
-        // 3. Forum Submission Logic
+        // Forum Post Submission
         async function submitToForum() {
             const name = document.getElementById('forumName').value.trim();
             const phone = document.getElementById('forumPhone').value.trim();
             const content = document.getElementById('forumContent').value.trim();
+            const container = document.getElementById('forumContainer');
 
-            if (!name || !phone || !content) {
-                alert("Please fill in your name, phone, and message.");
-                return;
-            }
-
-            const payload = {
-                name: name,
-                phone: phone,
-                content: content,
-                target_id: document.getElementById('forumContainer').dataset.targetId,
-                level_type: document.getElementById('forumContainer').dataset.level
-            };
+            if(!name || !phone || !content) return alert("Please complete all fields");
 
             const res = await fetch('/post_to_forum', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    name, phone, content,
+                    target_id: container.dataset.targetId,
+                    level_type: container.dataset.level
+                })
             });
 
-            const data = await res.json();
-            if (data.status === 'success') {
+            if ((await res.json()).status === 'success') {
                 document.getElementById('forumContent').value = '';
-                loadForum(); // Refresh the board
-            } else {
-                alert(data.message);
+                loadForum();
             }
         }
 
-        // Initialize forum on load
         document.addEventListener('DOMContentLoaded', loadForum);
     </script>
 </body>
