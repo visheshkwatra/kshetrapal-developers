@@ -1,0 +1,12 @@
+[Unit]
+Description=gunicorn daemon for kshetrapal
+After=network.target
+
+[Service]
+User=quickrpe
+Group=www-data
+WorkingDirectory=/home/quickrpe/kshetrapal
+ExecStart=/home/quickrpe/kshetrapal/kshetrapalenv/bin/gunicorn --workers 2 --bind unix:/home/quickrpe/kshetrapal/kshetrapal.sock app:app
+
+[Install]
+WantedBy=multi-user.target

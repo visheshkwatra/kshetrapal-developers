@@ -1,0 +1,33 @@
+server {
+    server_name kshetrapal.dotdevz.com www.kshetrapal.dotdevz.com;
+
+    client_max_body_size 3M;
+
+    location ~ ^/.well-known {
+        root /home/quickrpe/kshetrapal;
+        allow all;
+    }
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+        root /home/quickrpe/kshetrapal;
+    }
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/home/quickrpe/kshetrapal/kshetrapal.sock;
+    }
+    location /robots.txt {
+        alias /home/quickrpe/kshetrapal/static/robots.txt;
+    }
+
+    location /sitemap.xml {
+        alias /home/quickrpe/kshetrapal/static/sitemap.xml;
+    }
+
+}
+
+# Redirect HTTP → HTTPS
+server {
+    listen 80;
+    server_name kshetrapal.dotdevz.com www.kshetrapal.dotdevz.com;
+    return 301 https://$host$request_uri;
+}
