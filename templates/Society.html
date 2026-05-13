@@ -51,7 +51,66 @@
         }
         .nav-glass.scrolled { transform: translateY(0); box-shadow: 0 4px 30px rgba(0,0,0,0.05); }
 
-        .map-container { height: 500px; overflow: hidden; }
+        .map-container { height: 500px; overflow: hidden; position: relative; }
+        .map-container img { width: 100%; height: 100%; object-fit: contain; background: #f1f5f9; }
+        .map-fullscreen-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255,255,255,0.92);
+            border: none;
+            border-radius: 10px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+        .map-fullscreen-btn:hover { background: #ea580c; color: white; transform: scale(1.1); }
+        .map-fullscreen-btn svg { width: 20px; height: 20px; }
+
+        /* Lightbox overlay */
+        #mapLightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.88);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        #mapLightbox.active { display: flex; }
+        #mapLightbox img {
+            max-width: 95vw;
+            max-height: 92vh;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 8px 60px rgba(0,0,0,0.5);
+        }
+        #mapLightboxClose {
+            position: fixed;
+            top: 18px;
+            right: 22px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            font-size: 1.6rem;
+            line-height: 1;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        #mapLightboxClose:hover { background: #ea580c; }
         .forum-feed { height: 350px; overflow-y: auto; }
 
         .sub-area-pill {
@@ -113,17 +172,51 @@
         </div>
 
         <div class="row g-4 mb-5">
+
+            <!-- Map card with built-in ad columns -->
             <div class="col-lg-8">
-                <div class="glass-card map-container p-2">
-                    {% if item and item.map_image %}
-                <img src="{{ url_for('static', filename=item.map_image) }}" 
-                class="w-full h-full rounded-3 object-cover" 
-                alt="Map of {{ item_name }}">
-        {% else %}
-            <div class="bg-slate-200 w-full h-full rounded-3 flex items-center justify-center italic text-muted">
-                Map imagery updating soon for {{ item_name }}
-            </div>
-        {% endif %}
+                <div class="glass-card p-2" style="min-height:500px;">
+                    <div class="d-flex h-100 gap-2" style="min-height:496px;">
+
+                        <!-- Left Ad -->
+                        <div class="d-none d-lg-flex flex-column align-items-center justify-content-center text-center flex-shrink-0"
+                             style="width:110px; border: 2px dashed rgba(234,88,12,0.2); border-radius:16px; background:rgba(255,255,255,0.4);">
+                            <svg width="24" height="24" fill="none" stroke="#ea580c" stroke-width="1.5" viewBox="0 0 24 24" class="mb-1 opacity-40">
+                                <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/>
+                            </svg>
+                            <span class="text-muted" style="font-size:10px; letter-spacing:.05em; writing-mode:vertical-rl; text-orientation:mixed;">AD SPACE</span>
+                        </div>
+
+                        <!-- Map image -->
+                        <div class="flex-grow-1 position-relative map-container" style="min-width:0; border-radius:16px; overflow:hidden; height:496px;">
+                            {% if item and item.map_image %}
+                                <img id="mainMapImg"
+                                     src="{{ url_for('static', filename=item.map_image) }}"
+                                     class="rounded-3"
+                                     alt="Map of {{ item_name }}">
+                                <button class="map-fullscreen-btn" onclick="openMapLightbox()" title="View full screen">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+                                        <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+                                    </svg>
+                                </button>
+                            {% else %}
+                                <div class="bg-slate-200 w-full h-full rounded-3 flex items-center justify-center italic text-muted">
+                                    Map imagery updating soon for {{ item_name }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Right Ad -->
+                        <div class="d-none d-lg-flex flex-column align-items-center justify-content-center text-center flex-shrink-0"
+                             style="width:110px; border: 2px dashed rgba(234,88,12,0.2); border-radius:16px; background:rgba(255,255,255,0.4);">
+                            <svg width="24" height="24" fill="none" stroke="#ea580c" stroke-width="1.5" viewBox="0 0 24 24" class="mb-1 opacity-40">
+                                <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3l-4 4-4-4"/>
+                            </svg>
+                            <span class="text-muted" style="font-size:10px; letter-spacing:.05em; writing-mode:vertical-rl; text-orientation:mixed;">AD SPACE</span>
+                        </div>
+
+                    </div>
                 </div>
             </div>
 
@@ -259,6 +352,27 @@
         }
 
         document.addEventListener('DOMContentLoaded', loadForum);
+
+        // ── Map lightbox ──
+        function openMapLightbox() {
+            const src = document.getElementById('mainMapImg').src;
+            document.getElementById('mapLightboxImg').src = src;
+            document.getElementById('mapLightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMapLightbox() {
+            document.getElementById('mapLightbox').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeMapLightbox();
+        });
     </script>
+
+    <!-- Map Lightbox Overlay -->
+    <div id="mapLightbox" onclick="closeMapLightbox()">
+        <button id="mapLightboxClose" onclick="closeMapLightbox()" title="Close">&times;</button>
+        <img id="mapLightboxImg" src="" alt="Full screen map" onclick="event.stopPropagation()">
+    </div>
 </body>
 </html>
