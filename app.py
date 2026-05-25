@@ -1,8 +1,16 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+import re
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_
 from datetime import datetime
+
+def slugify(value):
+    """Convert 'Sector 34' → 'sector-34', 'Rohini' → 'rohini'"""
+    value = str(value).lower().strip()
+    value = re.sub(r'[^\w\s-]', '', value)
+    value = re.sub(r'[\s_]+', '-', value)
+    return value.strip('-')
 
 # --- CONFIGURATION ---
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -14,6 +22,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+app.jinja_env.filters['slugify'] = slugify
 
 # --- MODELS ---
 
@@ -66,8 +75,9 @@ class ChatMessage(db.Model):
 def home():
     areas = Area.query.all()
     hot_sectors = Sector.query.limit(4).all()
+    all_sectors = Sector.query.order_by(Sector.name).all()
     news_feed = News.query.order_by(News.date_posted.desc()).limit(3).all()
-    return render_template('home.html', areas=areas, hot_sectors=hot_sectors, news_feed=news_feed)
+    return render_template('home.html', areas=areas, hot_sectors=hot_sectors, news_feed=news_feed, all_sectors=all_sectors)
 
 # --- Suggestions ---
 @app.route('/api/suggestions')
@@ -137,29 +147,130 @@ def search():
     query = request.args.get('q', '').strip()
     if not query: return redirect(url_for('home'))
 
-    # Hierarchy Check: Same logic as suggestions for consistency
-    # 1. Exact/Partial Society
-    soc = Society.query.filter(Society.name.ilike(f"%{query}%")).first()
-    if soc: return render_template('Society.html', level="society", item=soc, item_name=soc.name)
-
-    # 2. Multi-word Sector/Area check
+    # Try to resolve to a clean URL and redirect (301) for SEO
     words = query.split()
+
+    # Multi-word Area+Sector (e.g. "Rohini Sector 34")
     if len(words) > 1:
         sec = Sector.query.join(Area).filter(
             Area.name.ilike(f"%{words[0]}%"),
             Sector.name.ilike(f"%{' '.join(words[1:])}%")
         ).first()
-        if sec: return render_template('Society.html', level="sector", item=sec, item_name=sec.name, societies=sec.societies)
+        if sec and sec.area_ref:
+            return redirect(f"/map/{slugify(sec.area_ref.name)}/{slugify(sec.name)}", 301)
 
-    # 3. Standard Sector
+    # Standard Sector
     sec = Sector.query.filter(Sector.name.ilike(f"%{query}%")).first()
-    if sec: return render_template('Society.html', level="sector", item=sec, item_name=sec.name, societies=sec.societies)
+    if sec and sec.area_ref:
+        return redirect(f"/map/{slugify(sec.area_ref.name)}/{slugify(sec.name)}", 301)
 
-    # 4. Standard Area
+    # Standard Area
     area = Area.query.filter(Area.name.ilike(f"%{query}%")).first()
-    if area: return render_template('Society.html', level="area", item=area, item_name=area.name, sectors=area.sectors)
+    if area:
+        return redirect(f"/map/{slugify(area.name)}", 301)
+
+    # Society / pocket
+    soc = Society.query.filter(Society.name.ilike(f"%{query}%")).first()
+    if soc and soc.sector_ref and soc.sector_ref.area_ref:
+        return redirect(
+            f"/map/{slugify(soc.sector_ref.area_ref.name)}/{slugify(soc.sector_ref.name)}/{slugify(soc.name)}", 301
+        )
 
     return render_template('Society.html', item_name=query, societies=[])
+
+
+# --- CLEAN SEO ROUTES ---
+
+@app.route('/map/<area_slug>')
+def area_page(area_slug):
+    area_name = area_slug.replace('-', ' ')
+    area = Area.query.filter(Area.name.ilike(area_name)).first()
+    if not area:
+        area = Area.query.filter(Area.name.ilike(f"%{area_name}%")).first()
+    if area:
+        return render_template('Society.html', level="area", item=area, item_name=area.name, sectors=area.sectors)
+    return redirect(url_for('home'))
+
+
+@app.route('/map/<area_slug>/<sector_slug>')
+def sector_page(area_slug, sector_slug):
+    area_name = area_slug.replace('-', ' ')
+    sector_name = sector_slug.replace('-', ' ')
+    sec = Sector.query.join(Area).filter(
+        Area.name.ilike(area_name),
+        Sector.name.ilike(sector_name)
+    ).first()
+    if sec:
+        return render_template('Society.html', level="sector", item=sec, item_name=sec.name, societies=sec.societies)
+    return redirect(url_for('home'))
+
+
+@app.route('/map/<area_slug>/<sector_slug>/<pocket_slug>')
+def pocket_page(area_slug, sector_slug, pocket_slug):
+    area_name = area_slug.replace('-', ' ')
+    sector_name = sector_slug.replace('-', ' ')
+    pocket_name = pocket_slug.replace('-', ' ')
+    soc = Society.query.join(Sector).join(Area).filter(
+        Area.name.ilike(area_name),
+        Sector.name.ilike(sector_name),
+        Society.name.ilike(pocket_name)
+    ).first()
+    if soc:
+        return render_template('Society.html', level="society", item=soc, item_name=soc.name)
+    return redirect(url_for('home'))
+
+# --- SITEMAP ---
+
+@app.route('/sitemap.xml')
+def sitemap():
+    BASE = 'https://kshetrapal.dotdevz.com'
+    urls = []
+
+    # Homepage
+    urls.append({'loc': BASE + '/', 'priority': '1.0', 'changefreq': 'weekly'})
+
+    # Areas
+    for area in Area.query.all():
+        urls.append({
+            'loc': f"{BASE}/map/{slugify(area.name)}",
+            'priority': '0.9',
+            'changefreq': 'monthly'
+        })
+
+    # Sectors
+    for sector in Sector.query.all():
+        area_slug = slugify(sector.area_ref.name) if sector.area_ref else 'delhi-ncr'
+        urls.append({
+            'loc': f"{BASE}/map/{area_slug}/{slugify(sector.name)}",
+            'priority': '0.8',
+            'changefreq': 'monthly'
+        })
+
+    # Societies (pockets / GH colonies)
+    for soc in Society.query.all():
+        if soc.sector_ref and soc.sector_ref.area_ref:
+            a_slug = slugify(soc.sector_ref.area_ref.name)
+            s_slug = slugify(soc.sector_ref.name)
+            urls.append({
+                'loc': f"{BASE}/map/{a_slug}/{s_slug}/{slugify(soc.name)}",
+                'priority': '0.6',
+                'changefreq': 'yearly'
+            })
+
+    xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>',
+                 '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for u in urls:
+        xml_parts.append(
+            f'  <url>'
+            f'<loc>{u["loc"]}</loc>'
+            f'<changefreq>{u["changefreq"]}</changefreq>'
+            f'<priority>{u["priority"]}</priority>'
+            f'</url>'
+        )
+    xml_parts.append('</urlset>')
+
+    return Response('\n'.join(xml_parts), mimetype='application/xml')
+
 # --- FORUM LOGIC ---
 
 @app.route('/get_forum_posts')

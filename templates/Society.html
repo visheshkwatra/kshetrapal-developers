@@ -1,9 +1,187 @@
+{%- if level is defined and level|lower == "area" -%}
+    {%- set area_name = item_name -%}
+{%- elif level is defined and level|lower == "sector" -%}
+    {%- set area_name = item.area_ref.name if item.area_ref else "Delhi NCR" -%}
+{%- elif level is defined and level|lower == "society" -%}
+    {%- set area_name = item.sector_ref.area_ref.name if item.sector_ref and item.sector_ref.area_ref else "Delhi NCR" -%}
+{%- else -%}
+    {%- set area_name = "Delhi NCR" -%}
+{%- endif -%}
+{%- if level is defined and level|lower == "area" -%}
+    {%- set clean_url = "https://kshetrapal.dotdevz.com/map/" ~ (item_name | slugify) -%}
+{%- elif level is defined and level|lower == "sector" -%}
+    {%- set clean_url = "https://kshetrapal.dotdevz.com/map/" ~ (area_name | slugify) ~ "/" ~ (item_name | slugify) -%}
+{%- elif level is defined and level|lower == "society" and item.sector_ref and item.sector_ref.area_ref -%}
+    {%- set clean_url = "https://kshetrapal.dotdevz.com/map/" ~ (item.sector_ref.area_ref.name | slugify) ~ "/" ~ (item.sector_ref.name | slugify) ~ "/" ~ (item_name | slugify) -%}
+{%- else -%}
+    {%- set clean_url = "https://kshetrapal.dotdevz.com/search?q=" ~ (item_name | urlencode) -%}
+{%- endif -%}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ item_name if item_name else "Explore" }} | Kshetrapal Developers</title>
+
+    <!-- Dynamic SEO Title -->
+    {% if level|lower == "sector" %}
+        <title>{{ item_name }} {{ area_name }} Map - Plot Layout, Pocket Details | Kshetrapal Developers</title>
+    {% elif level|lower == "area" %}
+        <title>{{ item_name }} Sector Maps & Property Layouts | Kshetrapal Developers Delhi NCR</title>
+    {% elif level|lower == "society" %}
+        <title>{{ item_name }} Map - {{ item.sector_ref.name if item.sector_ref else area_name }} Layout | Kshetrapal Developers</title>
+    {% else %}
+        <title>{{ item_name }} - Property Map & Layout | Kshetrapal Developers Delhi NCR</title>
+    {% endif %}
+
+    <!-- Dynamic Meta Description -->
+    {% if level|lower == "sector" %}
+        <meta name="description" content="View the verified layout map of {{ item_name }}, {{ area_name }}, Delhi. Explore all plot pockets, GH colonies and residential zones. Connect with property dealers in {{ item_name }}, {{ area_name }} through our community forum. Kshetrapal Developers.">
+    {% elif level|lower == "area" %}
+        <meta name="description" content="Explore all sectors of {{ item_name }} with verified layout maps, plot pocket details and colony plans. Find DDA plots, GH colonies and community property reviews for {{ item_name }} on Kshetrapal Developers.">
+    {% elif level|lower == "society" %}
+        <meta name="description" content="View the layout map of {{ item_name }} in {{ item.sector_ref.name if item.sector_ref else area_name }}, {{ area_name }}, Delhi. Get pocket plan details, plot information and community discussions. Kshetrapal Developers.">
+    {% else %}
+        <meta name="description" content="Search results for {{ item_name }} - verified property maps, layout plans and colony details in Delhi NCR. Kshetrapal Developers.">
+    {% endif %}
+
+    <!-- Dynamic Meta Keywords -->
+    {% if level|lower == "sector" %}
+        <meta name="keywords" content="{{ item_name }} {{ area_name }} map, {{ item_name }} layout, {{ item_name }} plot map, {{ item_name }} pocket map, {{ item_name }} {{ area_name }} property, {{ item_name }} DDA plots, {{ area_name }} sector map, Delhi property layout, {{ item_name }} colony plan, {{ item_name }} GH pockets, {{ area_name }} Delhi NCR, {{ item_name }} {{ area_name }} property dealer, property dealer {{ item_name }} {{ area_name }}, {{ area_name }} property dealer, {{ item_name }} plots for sale, kshetrapal developers">
+    {% elif level|lower == "area" %}
+        <meta name="keywords" content="{{ item_name }} sector map, {{ item_name }} property, {{ item_name }} layout map, {{ item_name }} colony plan, {{ item_name }} Delhi NCR, {{ item_name }} plots, {{ item_name }} sector wise map, DDA plots Delhi, kshetrapal developers">
+    {% else %}
+        <meta name="keywords" content="{{ item_name }} map, {{ item_name }} layout, {{ item_name }} {{ area_name }}, property map Delhi NCR, pocket plan Delhi, kshetrapal developers">
+    {% endif %}
+
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Kshetrapal Developers">
+    <link rel="canonical" href="{{ clean_url }}">
+    <link rel="sitemap" type="application/xml" href="https://kshetrapal.dotdevz.com/sitemap.xml">
+
+    <!-- Open Graph -->
+    {% if level|lower == "sector" %}
+        <meta property="og:title" content="{{ item_name }} {{ area_name }} Map - Plot Layout & Pocket Details | Kshetrapal">
+        <meta property="og:description" content="View verified layout map of {{ item_name }} {{ area_name }}. Explore plot pockets, GH colonies and residential zones with community reviews.">
+    {% elif level|lower == "area" %}
+        <meta property="og:title" content="{{ item_name }} Sector Maps & Property Layouts | Kshetrapal">
+        <meta property="og:description" content="All sector maps and property layout plans for {{ item_name }}, Delhi NCR on Kshetrapal Developers.">
+    {% else %}
+        <meta property="og:title" content="{{ item_name }} Property Map | Kshetrapal Developers Delhi NCR">
+        <meta property="og:description" content="Verified layout map and property details for {{ item_name }}, Delhi NCR.">
+    {% endif %}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Kshetrapal Developers">
+    <meta property="og:url" content="{{ clean_url }}">
+    {% if item and item.map_image %}
+        <meta property="og:image" content="https://kshetrapal.dotdevz.com/static/{{ item.map_image }}">
+    {% else %}
+        <meta property="og:image" content="https://kshetrapal.dotdevz.com/static/logo_kshtrapal.png">
+    {% endif %}
+    <meta property="og:locale" content="en_IN">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ item_name }} Map & Layout | Kshetrapal Developers">
+    <meta name="twitter:description" content="Verified property layout map for {{ item_name }}, Delhi NCR. Community-reviewed property details.">
+    {% if item and item.map_image %}
+        <meta name="twitter:image" content="https://kshetrapal.dotdevz.com/static/{{ item.map_image }}">
+    {% else %}
+        <meta name="twitter:image" content="https://kshetrapal.dotdevz.com/static/logo_kshtrapal.png">
+    {% endif %}
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {"@type":"ListItem","position":1,"name":"Home","item":"https://kshetrapal.dotdevz.com/"},
+            {% if level|lower == "area" %}
+            {"@type":"ListItem","position":2,"name":"{{ item_name }}","item":"https://kshetrapal.dotdevz.com/search?q={{ item_name | urlencode }}"}
+            {% elif level|lower == "sector" %}
+            {"@type":"ListItem","position":2,"name":"{{ item.area_ref.name if item.area_ref else 'Delhi NCR' }}","item":"https://kshetrapal.dotdevz.com/search?q={{ (item.area_ref.name if item.area_ref else 'Delhi NCR') | urlencode }}"},
+            {"@type":"ListItem","position":3,"name":"{{ item_name }}","item":"https://kshetrapal.dotdevz.com/search?q={{ item_name | urlencode }}"}
+            {% elif level|lower == "society" %}
+            {"@type":"ListItem","position":2,"name":"{{ item.sector_ref.area_ref.name if item.sector_ref and item.sector_ref.area_ref else 'Delhi NCR' }}","item":"https://kshetrapal.dotdevz.com/search?q={{ (item.sector_ref.area_ref.name if item.sector_ref and item.sector_ref.area_ref else 'Delhi NCR') | urlencode }}"},
+            {"@type":"ListItem","position":3,"name":"{{ item.sector_ref.name if item.sector_ref else '' }}","item":"https://kshetrapal.dotdevz.com/search?q={{ (item.sector_ref.name if item.sector_ref else '') | urlencode }}"},
+            {"@type":"ListItem","position":4,"name":"{{ item_name }}","item":"https://kshetrapal.dotdevz.com/search?q={{ item_name | urlencode }}"}
+            {% else %}
+            {"@type":"ListItem","position":2,"name":"{{ item_name }}","item":"https://kshetrapal.dotdevz.com/search?q={{ item_name | urlencode }}"}
+            {% endif %}
+          ]
+        },
+        {
+          "@type": "Place",
+          "name": "{{ item_name }}{% if level|lower == 'sector' %}, {{ area_name }}, Delhi{% elif level|lower == 'area' %}, Delhi NCR{% endif %}",
+          "description": "{% if level|lower == 'sector' %}Layout map and property details for {{ item_name }}, {{ area_name }}, Delhi.{% elif level|lower == 'area' %}Sector maps and colony layouts for {{ item_name }}, Delhi NCR.{% else %}Property map for {{ item_name }}, Delhi NCR.{% endif %}",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "{% if level|lower == 'sector' %}{{ area_name }}{% elif level|lower == 'area' %}{{ item_name }}{% else %}Delhi{% endif %}",
+            "addressRegion": "Delhi",
+            "addressCountry": "IN"
+          },
+            "url": "{{ clean_url }}"
+          {% if item and item.map_image %}
+          ,"image": "https://kshetrapal.dotdevz.com/static/{{ item.map_image }}"
+          {% endif %}
+        }
+      ]
+    }
+    </script>
+
+    {% if level|lower == "sector" %}
+    <!-- FAQ Schema — shows as rich results in Google SERP -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Where is {{ item_name }} {{ area_name }} located?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "{{ item_name }} is a planned residential sector in {{ area_name }}, Delhi. {{ area_name }} is one of Delhi's well-known residential areas developed under DDA (Delhi Development Authority) planning. {{ item_name }} is well-connected by Delhi Metro and major roads."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What types of plots are available in {{ item_name }} {{ area_name }}?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "{{ item_name }} {{ area_name }} has DDA-allotted residential plots divided into multiple pockets. Plot sizes typically range from 50 sq. yards to 300 sq. yards across different plot pockets. The sector also includes group housing (GH) colonies and residential flats."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I view the layout map of {{ item_name }} {{ area_name }}?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can view the official layout map of {{ item_name }} {{ area_name }} on Kshetrapal Developers. Browse the sector overview map and click on individual plot pockets to see detailed pocket layout plans. Each pocket map shows exact plot boundaries and plot numbers."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to buy property in {{ item_name }} {{ area_name }}?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "To buy property in {{ item_name }} {{ area_name }}, first view the layout map on Kshetrapal to identify the pocket and plot number. Then verify ownership with DDA or Delhi sub-registrar records. Use the community forum on this page to connect with local residents and property dealers in {{ item_name }} {{ area_name }}."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to find property dealers in {{ item_name }} {{ area_name }}?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Property dealers in {{ item_name }}, {{ area_name }} can be contacted through the community forum on this page. Post your property requirement — plot, flat or builder floor — with your contact details and local property dealers active in {{ item_name }} {{ area_name }} will reach out. You can also browse plot pockets to identify available properties and ask about sellers in each pocket."
+          }
+        }
+      ]
+    }
+    </script>
+    {% endif %}
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -137,7 +315,7 @@
     <nav id="floatingNav" class="nav-glass py-2">
         <div class="container d-flex align-items-center justify-content-between">
             <a class="navbar-brand d-flex align-items-center" href="/">
-                <img src="{{ url_for('static', filename='logo_kshetrapal.png') }}" alt="Logo" style="max-height: 40px;" class="me-2">
+                <img src="{{ url_for('static', filename='logo_kshetrapal.png') }}" alt="Kshetrapal Developers - Rohini Property Maps" style="max-height: 40px;" class="me-2">
                 <span class="fw-bold text-orange-700 h5 mb-0 d-none d-md-block">Kshetrapal</span>
             </a>
             <form action="/search" method="GET" class="flex-grow-1 mx-3 mx-lg-5">
@@ -152,7 +330,7 @@
     <div class="container pt-4 mb-4">
         <div class="d-flex align-items-center">
             <a href="/" class="d-flex align-items-center text-decoration-none">
-                <img src="{{ url_for('static', filename='logo_kshetrapal.png') }}" alt="Logo" style="max-width: 120px; height: auto;">
+                <img src="{{ url_for('static', filename='logo_kshetrapal.png') }}" alt="Kshetrapal Developers" style="max-width: 120px; height: auto;">
                 <div class="ms-3">
                     <span class="fw-bold text-orange-700 d-block h4 mb-0">Kshetrapal</span>
                     <small class="text-muted fw-semibold text-uppercase tracking-widest" style="font-size: 10px;">Developers</small>
@@ -162,13 +340,55 @@
     </div>
 
     <div class="container">
+        <!-- Breadcrumb (SEO + UX) -->
+        <nav aria-label="breadcrumb" class="mb-2 mt-1">
+            <ol class="breadcrumb" style="font-size:13px; background:none; padding:0; margin:0;">
+                <li class="breadcrumb-item"><a href="/" class="text-orange-600 text-decoration-none">Home</a></li>
+                {% if level|lower == "sector" and item.area_ref %}
+                    <li class="breadcrumb-item"><a href="/search?q={{ item.area_ref.name }}" class="text-orange-600 text-decoration-none">{{ item.area_ref.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ item_name }}</li>
+                {% elif level|lower == "society" and item.sector_ref %}
+                    {% if item.sector_ref.area_ref %}
+                    <li class="breadcrumb-item"><a href="/search?q={{ item.sector_ref.area_ref.name }}" class="text-orange-600 text-decoration-none">{{ item.sector_ref.area_ref.name }}</a></li>
+                    {% endif %}
+                    <li class="breadcrumb-item"><a href="/search?q={{ item.sector_ref.name }}" class="text-orange-600 text-decoration-none">{{ item.sector_ref.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ item_name }}</li>
+                {% elif level|lower == "area" %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ item_name }}</li>
+                {% else %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ item_name }}</li>
+                {% endif %}
+            </ol>
+        </nav>
+
         <div class="mb-4">
-            <h1 class="display-6 fw-extrabold text-slate-900">
-                Verified Results for <span class="text-orange-600">{{ item_name if item_name else "Location" }}</span>
-            </h1>
-            <p class="text-slate-600">
-                {% if level|lower == "area" %} Regional Hub {% else %} Premium Residential Hub {% endif %} • Delhi NCR
-            </p>
+            {% if level|lower == "sector" %}
+                <h1 class="display-6 fw-extrabold text-slate-900">
+                    {{ item_name }} <span class="text-orange-600">{{ area_name }}</span> — Layout Map &amp; Plot Details
+                </h1>
+                <p class="text-slate-600">
+                    Verified plot pocket map, GH colony layout and residential zone details for <strong>{{ item_name }}, {{ area_name }}, Delhi</strong>. Browse all pockets below and read community reviews.
+                </p>
+            {% elif level|lower == "area" %}
+                <h1 class="display-6 fw-extrabold text-slate-900">
+                    <span class="text-orange-600">{{ item_name }}</span> — Sector Maps &amp; Colony Layouts
+                </h1>
+                <p class="text-slate-600">
+                    Browse verified sector-wise layout maps, DDA plot details and GH colony plans across <strong>{{ item_name }}, Delhi NCR</strong>.
+                </p>
+            {% elif level|lower == "society" %}
+                <h1 class="display-6 fw-extrabold text-slate-900">
+                    {{ item_name }} — <span class="text-orange-600">{% if item.sector_ref %}{{ item.sector_ref.name }} {% endif %}Map</span>
+                </h1>
+                <p class="text-slate-600">
+                    Layout plan and property details for <strong>{{ item_name }}{% if item.sector_ref %}, {{ item.sector_ref.name }}{% endif %}, {{ area_name }}, Delhi</strong>.
+                </p>
+            {% else %}
+                <h1 class="display-6 fw-extrabold text-slate-900">
+                    Verified Results for <span class="text-orange-600">{{ item_name if item_name else "Location" }}</span>
+                </h1>
+                <p class="text-slate-600">Premium Residential Hub • Delhi NCR</p>
+            {% endif %}
         </div>
 
         <div class="row g-4 mb-5">
@@ -193,7 +413,7 @@
                                 <img id="mainMapImg"
                                      src="{{ url_for('static', filename=item.map_image) }}"
                                      class="rounded-3"
-                                     alt="Map of {{ item_name }}">
+                                     alt="{{ item_name }}{% if level|lower == 'sector' %} {{ area_name }} layout map - plot pocket plan{% elif level|lower == 'society' %} pocket layout map{% else %} map{% endif %}">
                                 <button class="map-fullscreen-btn" onclick="openMapLightbox()" title="View full screen">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -225,8 +445,12 @@
                      data-target-id="{{ item.id }}" data-level="{{ level|lower }}">
                     
                     <div class="p-4 border-bottom bg-slate-50 rounded-t-[24px]">
-                        <h5 class="fw-bold mb-0 text-slate-800">Community Board</h5>
-                        <p class="small text-muted mb-0">Updates for {{ item_name }}</p>
+                        <h5 class="fw-bold mb-0 text-slate-800">
+                            {% if level|lower == 'sector' %}Property Dealers &amp; Community Forum{% else %}Community Board{% endif %}
+                        </h5>
+                        <p class="small text-muted mb-0">
+                            {% if level|lower == 'sector' %}Connect with property dealers &amp; residents in {{ item_name }}{% else %}Updates for {{ item_name }}{% endif %}
+                        </p>
                     </div>
 
                     <div class="p-4 overflow-y-auto flex-grow-1 bg-white/30 forum-feed" id="forumFeed">
@@ -249,15 +473,15 @@
         </div>
 
         <div class="mb-5">
-            <h4 class="fw-bold mb-4 text-slate-800">
+            <h2 class="fw-bold mb-4 text-slate-800" style="font-size:1.35rem;">
                 {% if level|lower == "area" %} 
-                    Explore Sectors in {{ item_name }}
+                    Explore All Sectors in {{ item_name }}
                 {% elif level|lower == "sector" %} 
-                    Societies & Sub-Colonies
+                    Plot Pockets &amp; Sub-Colonies in {{ item_name }} 
                 {% else %} 
                     Location Details
                 {% endif %}
-            </h4>
+            </h2>
             
             <div class="d-flex flex-wrap gap-3">
                 {% if level|lower == "area" %}
@@ -292,6 +516,83 @@
             </div>
         </div>
     </div> 
+
+    <!-- SEO: About section & Nearby Sectors (sector/area pages) -->
+    {% if level|lower == "sector" %}
+    <div class="container mb-5">
+        <div class="glass-card p-4 p-lg-5 mb-4">
+            <h2 class="fw-bold mb-3" style="font-size:1.25rem;">About {{ item_name }}, {{ area_name }} — Property &amp; Layout Overview</h2>
+            <p class="text-slate-700 mb-3"><strong>{{ item_name }}</strong> is a planned residential sector in <strong>{{ area_name }}, Delhi</strong>. {{ area_name }} is one of Delhi NCR's well-planned residential areas developed by the Delhi Development Authority (DDA). {{ item_name }} comprises multiple plot pockets, group housing (GH) colonies and residential blocks, each with a distinct layout map showing individual plot boundaries and plot numbers.</p>
+            <p class="text-slate-700 mb-0">Property in <strong>{{ item_name }}, {{ area_name }}</strong> includes DDA-allotted freehold plots, builder floors and residential flats. Use the layout map above to identify plot pockets, and the community forum to connect with local residents and property dealers. For plot ownership records, refer to the Delhi Sub-Registrar office or DDA's official portal.</p>
+        </div>
+
+        {% set sector_num = item_name.split(' ')[-1] | int %}
+        {% if sector_num > 0 %}
+        <div>
+            <h3 class="fw-bold mb-3 text-slate-700" style="font-size:1rem;">Nearby {{ area_name }} Sectors</h3>
+            <div class="d-flex flex-wrap gap-2">
+                {% for offset in [-2, -1, 1, 2] %}
+                    {% set n = sector_num + offset %}
+                    {% if n > 0 and n <= 38 and n != 33 %}
+                    <a href="/map/{{ area_name | slugify }}/sector-{{ n }}" class="text-decoration-none">
+                        <span class="badge fw-normal px-3 py-2" style="border-radius:10px; background:rgba(234,88,12,0.08); color:#c2410c; border:1px solid rgba(234,88,12,0.15); font-size:13px;">Sector {{ n }} {{ area_name }}</span>
+                    </a>
+                    {% endif %}
+                {% endfor %}
+                <a href="/map/{{ area_name | slugify }}" class="text-decoration-none">
+                    <span class="badge fw-normal px-3 py-2" style="border-radius:10px; background:rgba(15,118,110,0.07); color:#0f766e; border:1px solid rgba(15,118,110,0.15); font-size:13px;">All {{ area_name }} Sectors →</span>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% elif level|lower == "area" %}
+    <div class="container mb-5">
+        <div class="glass-card p-4 p-lg-5">
+            <h2 class="fw-bold mb-3" style="font-size:1.25rem;">About {{ item_name }} — Sector Maps &amp; Real Estate</h2>
+            <p class="text-slate-700 mb-3"><strong>{{ item_name }}</strong> is one of Delhi NCR's major residential areas, comprising multiple planned sectors developed by DDA (Delhi Development Authority). Each sector in {{ item_name }} has a distinct layout plan with plot pockets, group housing colonies and residential blocks.</p>
+            <p class="text-slate-700 mb-0">Kshetrapal Developers provides verified layout maps for all sectors in {{ item_name }}, covering DDA plot pockets, GH colony plans and residential zone details. Browse all sectors above to find property maps, plot details and community reviews for <strong>{{ item_name }}, Delhi NCR</strong>.</p>
+        </div>
+    </div>
+
+    {% elif level|lower == "society" and item.sector_ref %}
+    <div class="container mb-5">
+        <div class="glass-card p-4">
+            <h2 class="fw-bold mb-3" style="font-size:1.1rem;">About {{ item_name }} — {{ item.sector_ref.name }} {{ area_name }}</h2>
+            <p class="text-slate-700 mb-0"><strong>{{ item_name }}</strong> is a plot pocket in <strong>{{ item.sector_ref.name }}, {{ area_name }}, Delhi</strong>. The layout map above shows the official DDA plot plan for this pocket, including plot numbers and boundaries. Use the community forum to get the latest information about property transactions and developments in <strong>{{ item_name }}, {{ item.sector_ref.name }} {{ area_name }}</strong>.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SEO Footer -->
+    <footer class="container mt-5 pt-4 pb-3 border-top" style="border-color: rgba(0,0,0,0.07) !important;">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <h5 class="fw-bold text-slate-800 mb-3">Kshetrapal Developers</h5>
+                <p class="small text-muted">Your trusted portal for verified property layout maps, plot pocket details and sector-wise information across Rohini and Delhi NCR.</p>
+            </div>
+            <div class="col-md-4">
+                <h6 class="fw-bold text-slate-700 mb-3">Popular Rohini Sectors</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% set popular = ['Sector 7','Sector 11','Sector 15','Sector 16','Sector 22','Sector 24','Sector 25','Sector 28','Sector 34'] %}
+                    {% for s in popular %}
+                    <a href="/map/rohini/{{ s | slugify }}" class="badge text-decoration-none fw-normal px-2 py-1" style="border-radius:8px; font-size:11px; background: rgba(234,88,12,0.1); color: #ea580c;">{{ s }} Rohini</a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h6 class="fw-bold text-slate-700 mb-3">What We Offer</h6>
+                <ul class="list-unstyled small text-muted mb-0">
+                    <li class="mb-1">📍 Sector-wise layout maps of Rohini</li>
+                    <li class="mb-1">🏘️ Pocket &amp; GH colony plan details</li>
+                    <li class="mb-1">🗺️ DDA plot pocket information</li>
+                    <li class="mb-1">💬 Community reviews &amp; discussions</li>
+                </ul>
+            </div>
+        </div>
+        <p class="text-center text-muted mt-4 mb-0" style="font-size:12px;">© 2026 Kshetrapal Developers · Rohini, Delhi NCR · Property Map Portal</p>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -372,7 +673,7 @@
     <!-- Map Lightbox Overlay -->
     <div id="mapLightbox" onclick="closeMapLightbox()">
         <button id="mapLightboxClose" onclick="closeMapLightbox()" title="Close">&times;</button>
-        <img id="mapLightboxImg" src="" alt="Full screen map" onclick="event.stopPropagation()">
+        <img id="mapLightboxImg" src="" alt="Full screen layout map - {{ item_name }}" onclick="event.stopPropagation()">
     </div>
 </body>
 </html>

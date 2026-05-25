@@ -1,0 +1,46 @@
+server {
+    server_name algologsystems.com www.algologsystems.com;
+
+    client_max_body_size 3M;
+
+    location ~ ^/.well-known {
+        root /home/quickrpe/algolog;
+        allow all;
+    }
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location /static/ {
+        root /home/quickrpe/algolog;
+    }
+    location /media/ {
+        root /home/quickrpe/algolog;
+    }
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/home/quickrpe/algolog/algolog.sock;
+    }
+    location /robots.txt {
+        alias /home/quickrpe/algolog/static/robots.txt;
+    }
+
+    location /sitemap.xml {
+        alias /home/quickrpe/algolog/static/sitemap.xml;
+    }
+
+
+
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/algologsystems.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/algologsystems.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+
+
+}
+# Redirect HTTP ? HTTPS (covers both non-www and www)
+server {
+    listen 80;
+    server_name algologsystems.com www.algologsystems.com;
+    return 301 https://$host$request_uri;
+}

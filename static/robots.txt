@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Block API and forum endpoints (no SEO value)
+Disallow: /api/
+Disallow: /get_forum_posts
+Disallow: /post_to_forum
+
+# Block search with empty query
+Disallow: /search$
+
+Sitemap: https://kshetrapal.dotdevz.com/sitemap.xml
